@@ -5,15 +5,14 @@
 """
 This module generates uploads to BQ a table with the data extracted from yandex webmaster API.
 """
-
-
-
+import time
 
 import requests
 import json
 import sys
 import os
 import logging
+import pandas as pd
 from apiclient.discovery import build
 from collections import OrderedDict
 from datetime import datetime, timedelta
@@ -54,7 +53,7 @@ def date_range():
     # reverse the date range
     gsc_date_range = list(reversed(gsc_date_range))
 
-    return gsc_date_range
+    return gsc_date_range,script_file
 
 def GET_request(date):
     """
@@ -88,12 +87,30 @@ def GET_request(date):
     }
 
     API_URL = 'https://api.webmaster.yandex.net/v4'
-    # action = "/user/1408752219/hosts/http:blog.ikhuerta.com:80/search-queries/all/history?query_indicator=TOTAL_SHOWS&query_indicator=TOTAL_CLICKS"
     action = f"/user/1125390301/hosts/https:www.zara.com:443/search-queries/all/history?query_indicator=TOTAL_SHOWS&query_indicator=TOTAL_CLICKS&date_from={date}&date_to={date}"
 
-    resp = requests.get(API_URL + action, headers=headers)
-    c = resp.json()
-    return c
+    retry_count = 0
+    retry_max = 1
+
+    try:
+        resp = requests.get(API_URL + action, headers=headers)
+    except Exception as message:
+        if "400" or "401" in message:
+            logging.error(f"Could not retrieve html, authentication or token error: {message}")
+            sys.exit(1)
+        elif retry_count < retry_max:
+            print(f"Retrying ... (count {retry_count})")
+            # sleep for fifteen minutes
+            time.sleep(10)
+
+            # increase the counter
+            retry_count = retry_count + 1
+
+        else:
+            logging.error(f"Could not retrieve response: {message}")
+            raise Exception(str(message))
+
+    return resp.json()
 
 def is_date(s):
     r = False
@@ -130,31 +147,85 @@ def main():
     # Initialize logs
     set_logs("../core/logs")
 
+    bq_check=False
+    bq_alert_empty=False
+    bq_alert_callback = lambda x, y: requests.post("https://hook.integromat.com/kahmpduow7ftbnqbv1eeermaim9r8kos",
+                                                   data={
+                                                       "origin": "VM-GCE-Analytics.pem",
+                                                       "tool": "ikp-extract",
+                                                       "script": x,
+                                                       "error": y
+                                                   })
+
+    gsc_schemas = [bigquery.SchemaField('date', 'DATE', 'NULLABLE', None, ()),
+                    bigquery.SchemaField('impressions', 'FLOAT', 'NULLABLE', None, ()),
+                    bigquery.SchemaField('clicks', 'FLOAT', 'NULLABLE', None, ()),
+                    ]
+
+
     json_key_file = "ikaue-bb8.json"
+    bq_tmp_file='../core/df.csv'
 
-
-
-
+    bq_project='ikaue-bb8'
+    bq_dataset='testing'
+    bq_dataset_location='US'
 
     # build the BigQuery service object
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] =json_key_file
     cl = bigquery.Client()
 
-    gsc_date_range = date_range()
+    gsc_date_range,script_file = date_range()
     # traverse the date range
+
+    dfObj = pd.DataFrame(columns=["date", "clicks", "impressions"])
+
     for date in gsc_date_range:
 
-        json_resp = GET_request(date)
+        table_name = f'zara_yandex_{date}'
+        json_data = GET_request(date)
 
-        text_shows=[]
-        for shows in json_resp['indicators']['TOTAL_SHOWS']:
-            text_shows.append(shows)
-            print(text_shows)
+        for shows in json_data['indicators']['TOTAL_SHOWS']:
+            impressions = shows['value']
 
-        text_clicks=[]
-        for clicks in json_resp['indicators']['TOTAL_CLICKS']:
-            text_clicks.append(clicks)
-            print(text_clicks)
+        for clicks in json_data['indicators']['TOTAL_CLICKS']:
+            clicks = clicks['value']
+
+        dfObj = dfObj.append({'date': date, 'clicks': clicks, 'impressions': impressions}, ignore_index=True)
+
+
+    print(u">> %s rows to process" % (len(dfObj) if "dfObj" in locals() else 0))
+    dfObj.to_csv(bq_tmp_file, index=False)
+
+    # create the configuration for an upload job
+    final_table_name = u"%s.%s.%s" % (bq_project,bq_dataset,table_name)
+    jc = bigquery.LoadJobConfig()
+    jc.schema = gsc_schemas
+    jc.source_format = bigquery.SourceFormat.CSV
+    jc.write_disposition = bigquery.WriteDisposition.WRITE_TRUNCATE
+
+    # create a job to upload the rows
+    with open(bq_tmp_file, "rb") as f:
+        jb = cl.load_table_from_file(f, final_table_name, location=bq_dataset_location, job_config=jc)
+
+        try:
+            # upload the rows
+            rs = jb.result()
+
+            # check if the table was created successfully
+            if bq_check == True:
+                if not cl.get_table(final_table_name):
+                    if bq_alert_empty == True:
+                        bq_alert_callback(script_file, u"[bq] table '%s' was not created" % final_table_name)
+        except Exception as e:
+            print(u"ERROR: %s" % table_name)
+
+            if jb.errors:
+                for i in jb.errors:
+                    print(u"ERROR: %s" % i["message"])
+            else:
+                print(e)
+
+        f.close()
 
 
 if __name__ == "__main__":
