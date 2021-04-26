@@ -112,6 +112,59 @@ def GET_request(date):
 
     return resp.json()
 
+def upload_bq(bq_project, bq_dataset, table_name,gsc_schemas,bq_tmp_file,cl,bq_dataset_location,bq_check,bq_alert_empty,
+             bq_alert_callback,script_file):
+    """
+    This function uploads the CSV resultant to a BQ table.
+    :param bq_project: BQ project
+    :param bq_dataset: BQ dataset
+    :param table_name: Table name
+    :param gsc_schemas: BQ table Schema
+    :param bq_tmp_file: BQ tmp file
+    :param cl: BQ Client
+    :param bq_dataset_location: BQ Dataset Location
+    :param bq_check: Checks
+    :param bq_alert_empty: Alerts
+    :param bq_alert_callback: Alerts
+    :param script_file: script file name
+    :return: nothing
+    """
+
+
+    # create the configuration for an upload job
+    final_table_name = u"%s.%s.%s" % (bq_project, bq_dataset, table_name)
+    jc = bigquery.LoadJobConfig()
+    jc.schema = gsc_schemas
+    jc.source_format = bigquery.SourceFormat.CSV
+    jc.write_disposition = bigquery.WriteDisposition.WRITE_TRUNCATE
+
+    # create a job to upload the rows
+    with open(bq_tmp_file, "rb") as f:
+
+        jb = cl.load_table_from_file(f, final_table_name, location=bq_dataset_location, job_config=jc)
+
+        try:
+            # upload the rows
+            rs = jb.result()
+
+            # check if the table was created successfully
+            if bq_check == True:
+                if not cl.get_table(final_table_name):
+                    if bq_alert_empty == True:
+                        bq_alert_callback(script_file, u"[bq] table '%s' was not created" % final_table_name)
+        except Exception as e:
+            logging.error(f"Could not upload the table to BQ: {e}")
+
+            print(u"ERROR: %s" % table_name)
+
+            if jb.errors:
+                for i in jb.errors:
+                    print(u"ERROR: %s" % i["message"])
+            else:
+                print(e)
+
+        f.close()
+
 def is_date(s):
     r = False
     d = str(s)
@@ -145,7 +198,7 @@ def set_logs(case_directory):
 
 def main():
     # Initialize logs
-    set_logs("../core/logs")
+    #set_logs("../core/logs")
 
     bq_check=False
     bq_alert_empty=False
@@ -157,9 +210,9 @@ def main():
                                                        "error": y
                                                    })
 
-    gsc_schemas = [bigquery.SchemaField('date', 'DATE', 'NULLABLE', None, ()),
-                    bigquery.SchemaField('impressions', 'FLOAT', 'NULLABLE', None, ()),
-                    bigquery.SchemaField('clicks', 'FLOAT', 'NULLABLE', None, ()),
+    gsc_schemas = [bigquery.SchemaField('date', 'STRING', 'NULLABLE', None, ()),
+                   bigquery.SchemaField('clicks', 'FLOAT', 'NULLABLE', None, ()),
+                   bigquery.SchemaField('impressions', 'FLOAT', 'NULLABLE', None, ()),
                     ]
 
 
@@ -168,7 +221,7 @@ def main():
 
     bq_project='ikaue-bb8'
     bq_dataset='testing'
-    bq_dataset_location='US'
+    bq_dataset_location='EU'
 
     # build the BigQuery service object
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] =json_key_file
@@ -196,36 +249,9 @@ def main():
     print(u">> %s rows to process" % (len(dfObj) if "dfObj" in locals() else 0))
     dfObj.to_csv(bq_tmp_file, index=False)
 
-    # create the configuration for an upload job
-    final_table_name = u"%s.%s.%s" % (bq_project,bq_dataset,table_name)
-    jc = bigquery.LoadJobConfig()
-    jc.schema = gsc_schemas
-    jc.source_format = bigquery.SourceFormat.CSV
-    jc.write_disposition = bigquery.WriteDisposition.WRITE_TRUNCATE
+    upload_bq(bq_project, bq_dataset, table_name,gsc_schemas,bq_tmp_file,cl,bq_dataset_location,bq_check,bq_alert_empty,
+             bq_alert_callback,script_file)
 
-    # create a job to upload the rows
-    with open(bq_tmp_file, "rb") as f:
-        jb = cl.load_table_from_file(f, final_table_name, location=bq_dataset_location, job_config=jc)
-
-        try:
-            # upload the rows
-            rs = jb.result()
-
-            # check if the table was created successfully
-            if bq_check == True:
-                if not cl.get_table(final_table_name):
-                    if bq_alert_empty == True:
-                        bq_alert_callback(script_file, u"[bq] table '%s' was not created" % final_table_name)
-        except Exception as e:
-            print(u"ERROR: %s" % table_name)
-
-            if jb.errors:
-                for i in jb.errors:
-                    print(u"ERROR: %s" % i["message"])
-            else:
-                print(e)
-
-        f.close()
 
 
 if __name__ == "__main__":
