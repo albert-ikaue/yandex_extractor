@@ -60,6 +60,7 @@ def GET_request(date):
     This function returns a json with the clicks and impressions from yandex.webmaster API v4 from Zara site.
     :return: string with data selected and obtained
     """
+
     # OAuth token of the user that requests will be made on behalf of
     token = 'AQAAAABT99pbAAcUcF1YciaFek7iiwOOsNQCYzQ'
 
@@ -111,6 +112,7 @@ def GET_request(date):
             raise Exception(str(message))
 
     json_data = resp.json()
+
     for shows in json_data['indicators']['TOTAL_SHOWS']:
         impressions = shows['value']
 
@@ -210,7 +212,7 @@ def set_logs(case_directory):
         sys.exit(1)
 
 def main():
-    # Initialize logs
+    # Uncomment to set and see all logs
     #set_logs("../core/logs")
 
     bq_check=False
@@ -249,6 +251,7 @@ def main():
 
     # traverse the date range
     for date in gsc_date_range:
+
         # Create empty df
         dfObj = pd.DataFrame()
 
