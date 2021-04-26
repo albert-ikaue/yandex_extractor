@@ -21,7 +21,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from dateutil.parser import parse
 
 
-sys.path.insert(1, "../core/")
+sys.path.insert(1, "../lib/")
 from config_helper import set_log_file
 
 
@@ -213,7 +213,7 @@ def set_logs(case_directory):
 
 def main():
     # Uncomment to set and see all logs
-    #set_logs("../core/logs")
+    #set_logs("../lib/logs")
 
     bq_check=False
     bq_alert_empty=False
@@ -235,7 +235,7 @@ def main():
 
 
     json_key_file = "ikaue-bb8.json"
-    bq_tmp_file='../core/df.csv'
+    bq_tmp_file= '../lib/df.csv'
 
     bq_project='ikaue-bb8'
     bq_dataset='testing'
