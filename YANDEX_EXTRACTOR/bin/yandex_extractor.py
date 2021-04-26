@@ -26,7 +26,7 @@ from config_helper import set_log_file
 
 
 def date_range():
-    gsc_date_start = datetime.strftime(datetime.now() - timedelta(8), "%Y-%m-%d")
+    gsc_date_start = datetime.strftime(datetime.now() - timedelta(5), "%Y-%m-%d")
     gsc_date_end = datetime.strftime(datetime.now() - timedelta(5), "%Y-%m-%d")
 
     # fetch the current script
@@ -58,7 +58,7 @@ def date_range():
 def GET_request(date):
     """
     This function returns a json with the clicks and impressions from yandex.webmaster API v4 from Zara site.
-    :return: json including clicks and impressions
+    :return: string with data selected and obtained
     """
     # OAuth token of the user that requests will be made on behalf of
     token = 'AQAAAABT99pbAAcUcF1YciaFek7iiwOOsNQCYzQ'
@@ -140,7 +140,7 @@ def upload_bq(bq_project, bq_dataset, table_name,gsc_schemas,bq_tmp_file,cl,bq_d
     :param bq_alert_empty: Alerts
     :param bq_alert_callback: Alerts
     :param script_file: script file name
-    :return: nothing
+    :return: Nothing
     """
 
 
@@ -229,7 +229,7 @@ def main():
         bigquery.SchemaField('clicks', 'STRING', 'NULLABLE', None, ()),
         bigquery.SchemaField('date', 'STRING', 'NULLABLE', None, ()),
         bigquery.SchemaField('impressions', 'STRING', 'NULLABLE', None, ()),
-                    ]
+        ]
 
 
     json_key_file = "ikaue-bb8.json"
@@ -252,17 +252,21 @@ def main():
         # Create empty df
         dfObj = pd.DataFrame()
 
-        table_name = f'zara_yandex_{date}'
+        flatten_date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y%m%d")
+        #Create table name
+        table_name = f'zara_yandex_{flatten_date}'
+
+        # Obtain desired data
         impressions, clicks, imp_av, clcl_av = GET_request(date)
 
-
-
+        # Fill DF
         dfObj = dfObj.append({'date': date, 'avg_click_pos':clcl_av,'avg_impressions_pos':imp_av,'clicks': clicks, 'impressions': impressions }, ignore_index=True)
 
         print(u">> date --> %s  rows to process  --> %s " % (date,len(dfObj) if "dfObj" in locals() else 0))
 
-        dfObj.to_csv(bq_tmp_file, index=False)
+        dfObj.to_csv(bq_tmp_file,header=False, index=False)
 
+        # Upload csv to BQ
         upload_bq(bq_project, bq_dataset, table_name,gsc_schemas,bq_tmp_file,cl,bq_dataset_location,bq_check,bq_alert_empty,
                  bq_alert_callback,script_file)
 
