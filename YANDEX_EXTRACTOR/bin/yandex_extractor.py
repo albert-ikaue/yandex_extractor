@@ -26,7 +26,7 @@ from config_helper import set_log_file
 
 
 def date_range():
-    gsc_date_start = datetime.strftime(datetime.now() - timedelta(5), "%Y-%m-%d")
+    gsc_date_start = datetime.strftime(datetime.now() - timedelta(8), "%Y-%m-%d")
     gsc_date_end = datetime.strftime(datetime.now() - timedelta(5), "%Y-%m-%d")
 
     # fetch the current script
@@ -87,7 +87,7 @@ def GET_request(date):
     }
 
     API_URL = 'https://api.webmaster.yandex.net/v4'
-    action = f"/user/1125390301/hosts/https:www.zara.com:443/search-queries/all/history?query_indicator=TOTAL_SHOWS&query_indicator=TOTAL_CLICKS&date_from={date}&date_to={date}"
+    action = f"/user/1125390301/hosts/https:www.zara.com:443/search-queries/all/history?query_indicator=TOTAL_SHOWS&query_indicator=TOTAL_CLICKS&query_indicator=AVG_SHOW_POSITION&query_indicator=AVG_CLICK_POSITION&date_from={date}&date_to={date}"
 
     retry_count = 0
     retry_max = 1
@@ -110,7 +110,20 @@ def GET_request(date):
             logging.error(f"Could not retrieve response: {message}")
             raise Exception(str(message))
 
-    return resp.json()
+    json_data = resp.json()
+    for shows in json_data['indicators']['TOTAL_SHOWS']:
+        impressions = shows['value']
+
+    for clicks in json_data['indicators']['TOTAL_CLICKS']:
+        clicks = clicks['value']
+
+    for av_im in json_data['indicators']['AVG_SHOW_POSITION']:
+        imp_av = av_im['value']
+
+    for av_cl in json_data['indicators']['AVG_CLICK_POSITION']:
+        clcl_av = av_cl['value']
+
+    return impressions, clicks, imp_av, clcl_av
 
 def upload_bq(bq_project, bq_dataset, table_name,gsc_schemas,bq_tmp_file,cl,bq_dataset_location,bq_check,bq_alert_empty,
              bq_alert_callback,script_file):
@@ -146,7 +159,7 @@ def upload_bq(bq_project, bq_dataset, table_name,gsc_schemas,bq_tmp_file,cl,bq_d
         try:
             # upload the rows
             rs = jb.result()
-
+            print("Table uploaded to BQ")
             # check if the table was created successfully
             if bq_check == True:
                 if not cl.get_table(final_table_name):
@@ -210,9 +223,12 @@ def main():
                                                        "error": y
                                                    })
 
-    gsc_schemas = [bigquery.SchemaField('date', 'STRING', 'NULLABLE', None, ()),
-                   bigquery.SchemaField('clicks', 'FLOAT', 'NULLABLE', None, ()),
-                   bigquery.SchemaField('impressions', 'FLOAT', 'NULLABLE', None, ()),
+    gsc_schemas = [
+        bigquery.SchemaField('avg_click_pos', 'STRING', 'NULLABLE', None, ()),
+        bigquery.SchemaField('avg_impressions_pos', 'STRING', 'NULLABLE', None, ()),
+        bigquery.SchemaField('clicks', 'STRING', 'NULLABLE', None, ()),
+        bigquery.SchemaField('date', 'STRING', 'NULLABLE', None, ()),
+        bigquery.SchemaField('impressions', 'STRING', 'NULLABLE', None, ()),
                     ]
 
 
@@ -228,29 +244,29 @@ def main():
     cl = bigquery.Client()
 
     gsc_date_range,script_file = date_range()
+
+
+
     # traverse the date range
-
-    dfObj = pd.DataFrame(columns=["date", "clicks", "impressions"])
-
     for date in gsc_date_range:
+        # Create empty df
+        dfObj = pd.DataFrame()
 
         table_name = f'zara_yandex_{date}'
-        json_data = GET_request(date)
-
-        for shows in json_data['indicators']['TOTAL_SHOWS']:
-            impressions = shows['value']
-
-        for clicks in json_data['indicators']['TOTAL_CLICKS']:
-            clicks = clicks['value']
-
-        dfObj = dfObj.append({'date': date, 'clicks': clicks, 'impressions': impressions}, ignore_index=True)
+        impressions, clicks, imp_av, clcl_av = GET_request(date)
 
 
-    print(u">> %s rows to process" % (len(dfObj) if "dfObj" in locals() else 0))
-    dfObj.to_csv(bq_tmp_file, index=False)
 
-    upload_bq(bq_project, bq_dataset, table_name,gsc_schemas,bq_tmp_file,cl,bq_dataset_location,bq_check,bq_alert_empty,
-             bq_alert_callback,script_file)
+        dfObj = dfObj.append({'date': date, 'avg_click_pos':clcl_av,'avg_impressions_pos':imp_av,'clicks': clicks, 'impressions': impressions }, ignore_index=True)
+
+        print(u">> date --> %s  rows to process  --> %s " % (date,len(dfObj) if "dfObj" in locals() else 0))
+
+        dfObj.to_csv(bq_tmp_file, index=False)
+
+        upload_bq(bq_project, bq_dataset, table_name,gsc_schemas,bq_tmp_file,cl,bq_dataset_location,bq_check,bq_alert_empty,
+                 bq_alert_callback,script_file)
+
+
 
 
 
