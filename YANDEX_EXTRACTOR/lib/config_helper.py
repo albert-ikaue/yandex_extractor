@@ -101,7 +101,7 @@ def obtain_data(json_data, option, date):
         return dfObj.append({'date': date, 'avg_click_pos': clcl_av, 'avg_impressions_pos': imp_av, 'clicks': clicks,
                              'impressions': impressions}, ignore_index=True)
 
-    elif option == "byDevice":
+    elif option == "byDevice_DESK":
         for shows in json_data['indicators']['TOTAL_SHOWS']:
             impressions = shows['value']
 
@@ -114,8 +114,26 @@ def obtain_data(json_data, option, date):
         for av_cl in json_data['indicators']['AVG_CLICK_POSITION']:
             clcl_av = av_cl['value']
 
-        for dev in json_data['device']['DEVICE']:
-            dev = dev['value']
+        dev="DESKTOP"
+
+        return dfObj.append({'date': date, 'avg_click_pos': clcl_av, 'avg_impressions_pos': imp_av, 'clicks': clicks,
+                             'impressions': impressions,'device': dev}, ignore_index=True)
+
+
+    elif option == "byDevice_MOB":
+        for shows in json_data['indicators']['TOTAL_SHOWS']:
+            impressions = shows['value']
+
+        for clicks in json_data['indicators']['TOTAL_CLICKS']:
+            clicks = clicks['value']
+
+        for av_im in json_data['indicators']['AVG_SHOW_POSITION']:
+            imp_av = av_im['value']
+
+        for av_cl in json_data['indicators']['AVG_CLICK_POSITION']:
+            clcl_av = av_cl['value']
+
+        dev="MOBILE_AND_TABLET"
 
         return dfObj.append({'date': date, 'avg_click_pos': clcl_av, 'avg_impressions_pos': imp_av, 'clicks': clicks,
                              'impressions': impressions,'device': dev}, ignore_index=True)
