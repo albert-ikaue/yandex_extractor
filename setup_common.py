@@ -1,15 +1,15 @@
 from setuptools import find_packages
-import NLP_ikaue
+import YANDEX_EXTRACTOR
 
 def define_args():
-    install_requirements = ['beautifulsoup4>=4.9.1','wheel>=0.36.2','googlesearch-python>=2020.0.2',
+    install_requirements = ['oauth2client>=4.1.3','wheel>=0.36.2','google-cloud-bigquery>=2.13.1','google-api-python-client>=2.2.0',
                             'google-cloud-language>=2.0.0','pandas>=1.2.4','pytest>=6.2.3']
 
     test_requirements = ['pytest>=4.3,<4.4', 'pytest-cov>=2.7,<2.8']
     args = {
-        'name': 'NLP_ikaue Python3 IKAUE',
-        'version': NLP_ikaue.__version__,
-        'url': 'https://github.com/albertlleo/python3_ikaue',
+        'name': 'YANDEX_EXTRACTOR Python3 IKAUE',
+        'version': YANDEX_EXTRACTOR.__version__,
+        'url': 'https://github.com/albertlleo/',
         'author': 'Albert Lleo',
         'author_email': 'albert@ikaue.com',
         'classifiers': ['Development Status :: 3 - Alpha', 'Programming Language :: Python :: 3'],
@@ -19,7 +19,7 @@ def define_args():
         'install_requires': install_requirements,
         'extras_require': {'testing': test_requirements},
         'project_urls': {'Source':
-                         'https://github.com/albertlleo/python3_ikaue'}
+                         'https://github.com/albertlleo/'}
 
     }
 
