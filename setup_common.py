@@ -7,9 +7,9 @@ def define_args():
 
     test_requirements = ['pytest>=4.3,<4.4', 'pytest-cov>=2.7,<2.8']
     args = {
-        'name': 'NLP_ikaue Python3 IKAUE',
+        'name': 'YANDEX_EXTRACTOR Python3 IKAUE',
         'version': YANDEX_EXTRACTOR.__version__,
-        'url': 'https://github.com/albertlleo/python3_ikaue',
+        'url': 'https://github.com/albertlleo/',
         'author': 'Albert Lleo',
         'author_email': 'albert@ikaue.com',
         'classifiers': ['Development Status :: 3 - Alpha', 'Programming Language :: Python :: 3'],
@@ -19,7 +19,7 @@ def define_args():
         'install_requires': install_requirements,
         'extras_require': {'testing': test_requirements},
         'project_urls': {'Source':
-                         'https://github.com/albertlleo/python3_ikaue'}
+                         'https://github.com/albertlleo/'}
 
     }
 
