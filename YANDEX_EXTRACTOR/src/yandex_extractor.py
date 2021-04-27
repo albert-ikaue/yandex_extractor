@@ -8,16 +8,13 @@ This module generates uploads to BQ a table with the data extracted from yandex 
 import time
 
 import requests
-import json
 import sys
 import os
 import logging
 import pandas as pd
-from apiclient.discovery import build
-from collections import OrderedDict
+
 from datetime import datetime, timedelta
 from google.cloud import bigquery
-from oauth2client.service_account import ServiceAccountCredentials
 from dateutil.parser import parse
 
 
