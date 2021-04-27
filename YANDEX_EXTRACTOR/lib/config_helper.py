@@ -1,5 +1,11 @@
+from datetime import datetime, timedelta
 import logging
 import os
+import pandas as pd
+from google.cloud import bigquery
+
+
+
 
 def set_log_file(target_folder: str, log_file_name: str):
     """
@@ -14,3 +20,102 @@ def set_log_file(target_folder: str, log_file_name: str):
     root.setLevel(logging.DEBUG)
     root.addHandler(file_handler)
     return root
+
+
+def set_data(option,date):
+    flatten_date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y%m%d")
+
+    if option == "summary":
+
+        action = f"/user/1125390301/hosts/https:www.zara.com:443/search-queries/all/history?query_indicator=TOTAL_SHOWS&query_indicator=TOTAL_CLICKS&query_indicator=AVG_SHOW_POSITION&query_indicator=AVG_CLICK_POSITION&date_from={date}&date_to={date}"
+
+        gsc_schemas = [bigquery.SchemaField('avg_click_pos', 'STRING', 'NULLABLE', None, ()),
+                        bigquery.SchemaField('avg_impressions_pos', 'STRING', 'NULLABLE', None, ()),
+                        bigquery.SchemaField('clicks', 'STRING', 'NULLABLE', None, ()),
+                        bigquery.SchemaField('date', 'STRING', 'NULLABLE', None, ()),
+                        bigquery.SchemaField('impressions', 'STRING', 'NULLABLE', None, ())]
+
+        table_name = f'ywt_zara_all_summary_{flatten_date}'
+        return action,gsc_schemas,table_name
+
+
+    if option == "byDevice_MOB":
+        action = f"/user/1125390301/hosts/https:www.zara.com:443/search-queries/all/history?query_indicator=TOTAL_SHOWS&query_indicator=TOTAL_CLICKS&query_indicator=AVG_SHOW_POSITION&query_indicator=AVG_CLICK_POSITION&device_type_indicator=MOBILE_AND_TABLET&date_from={date}&date_to={date}"
+
+        gsc_schemas = [bigquery.SchemaField('avg_click_pos', 'STRING', 'NULLABLE', None, ()),
+                     bigquery.SchemaField('avg_impressions_pos', 'STRING', 'NULLABLE', None, ()),
+                     bigquery.SchemaField('clicks', 'STRING', 'NULLABLE', None, ()),
+                     bigquery.SchemaField('date', 'STRING', 'NULLABLE', None, ()),
+                     bigquery.SchemaField('impressions', 'STRING', 'NULLABLE', None, ()),
+                     bigquery.SchemaField('device', 'STRING', 'NULLABLE', None, ())]
+
+        table_name = f"ywt_zara_all_byDevice_detail_{flatten_date}"
+        return action,gsc_schemas,table_name
+
+    if option == "byDevice_DESK":
+        action = f"/user/1125390301/hosts/https:www.zara.com:443/search-queries/all/history?query_indicator=TOTAL_SHOWS&query_indicator=TOTAL_CLICKS&query_indicator=AVG_SHOW_POSITION&query_indicator=AVG_CLICK_POSITION&device_type_indicator=DESKTOP&date_from={date}&date_to={date}"
+
+        gsc_schemas = [bigquery.SchemaField('avg_click_pos', 'STRING', 'NULLABLE', None, ()),
+                     bigquery.SchemaField('avg_impressions_pos', 'STRING', 'NULLABLE', None, ()),
+                     bigquery.SchemaField('clicks', 'STRING', 'NULLABLE', None, ()),
+                     bigquery.SchemaField('date', 'STRING', 'NULLABLE', None, ()),
+                     bigquery.SchemaField('impressions', 'STRING', 'NULLABLE', None, ()),
+                     bigquery.SchemaField('device', 'STRING', 'NULLABLE', None, ())]
+
+        table_name = f"ywt_zara_all_byDevice_detail_{flatten_date}"
+        return action,gsc_schemas,table_name
+
+    if option == "byQueries":
+        action = f"/user/1125390301/hosts/https:www.zara.com:443/search-queries/popular?order_by=TOTAL_CLICKS&query_indicator=TOTAL_CLICKS&query_indicator=TOTAL_SHOWS&query_indicator=AVG_SHOW_POSITION&query_indicator=AVG_CLICK_POSITION&date_from={date}&date_to={date}"
+
+        gsc_schemas = [bigquery.SchemaField('avg_click_pos', 'STRING', 'NULLABLE', None, ()),
+                      bigquery.SchemaField('avg_impressions_pos', 'STRING', 'NULLABLE', None, ()),
+                      bigquery.SchemaField('clicks', 'STRING', 'NULLABLE', None, ()),
+                      bigquery.SchemaField('date', 'STRING', 'NULLABLE', None, ()),
+                      bigquery.SchemaField('impressions', 'STRING', 'NULLABLE', None, ()),
+                      bigquery.SchemaField('queryID', 'STRING', 'NULLABLE', None, ()),
+                      bigquery.SchemaField('queryText', 'STRING', 'NULLABLE', None, ())]
+
+        table_name = f"ywt_zara_all_byQueries_detail_{flatten_date}"
+        return action,gsc_schemas,table_name
+
+
+def obtain_data(json_data, option, date):
+    # Create empty df
+    dfObj = pd.DataFrame()
+
+    if option == "summary":
+        for shows in json_data['indicators']['TOTAL_SHOWS']:
+            impressions = shows['value']
+
+        for clicks in json_data['indicators']['TOTAL_CLICKS']:
+            clicks = clicks['value']
+
+        for av_im in json_data['indicators']['AVG_SHOW_POSITION']:
+            imp_av = av_im['value']
+
+        for av_cl in json_data['indicators']['AVG_CLICK_POSITION']:
+            clcl_av = av_cl['value']
+
+
+        return dfObj.append({'date': date, 'avg_click_pos': clcl_av, 'avg_impressions_pos': imp_av, 'clicks': clicks,
+                             'impressions': impressions}, ignore_index=True)
+
+    elif option == "byDevice":
+        for shows in json_data['indicators']['TOTAL_SHOWS']:
+            impressions = shows['value']
+
+        for clicks in json_data['indicators']['TOTAL_CLICKS']:
+            clicks = clicks['value']
+
+        for av_im in json_data['indicators']['AVG_SHOW_POSITION']:
+            imp_av = av_im['value']
+
+        for av_cl in json_data['indicators']['AVG_CLICK_POSITION']:
+            clcl_av = av_cl['value']
+
+        for dev in json_data['device']['DEVICE']:
+            dev = dev['value']
+
+        return dfObj.append({'date': date, 'avg_click_pos': clcl_av, 'avg_impressions_pos': imp_av, 'clicks': clicks,
+                             'impressions': impressions,'device': dev}, ignore_index=True)
