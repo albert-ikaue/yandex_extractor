@@ -1,7 +1,7 @@
 import pytest
 import sys
 
-sys.path.insert(1, "../src/")
+sys.path.insert(1, "../../YANDEX_EXTRACTOR/src")
 from yandex_extractor import date_range
 
 

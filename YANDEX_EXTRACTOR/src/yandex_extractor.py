@@ -18,10 +18,23 @@ from google.cloud import bigquery
 from dateutil.parser import parse
 
 
-sys.path.insert(1, "../lib/")
+sys.path.insert(1,"../lib")
 from config_helper import set_log_file
 
+"""
+TO-DO
 
+ywt_zara_all_summary_20210417
+impressions, clicks, pos mitja impr, pos mitja clicks
+
+ywt_zara_all_byDevice_detail_20210417
+impressions, clicks, pos mitja impr, pos mitja clicks, device (mobileTablet, desktop)
+
+ywt_zara_all_byQueries_detail_20210417
+impressions, clicks, pos mitja impr, pos mitja clicks, queryId, queryText
+
+
+"""
 def date_range():
     gsc_date_start = datetime.strftime(datetime.now() - timedelta(5), "%Y-%m-%d")
     gsc_date_end = datetime.strftime(datetime.now() - timedelta(5), "%Y-%m-%d")
