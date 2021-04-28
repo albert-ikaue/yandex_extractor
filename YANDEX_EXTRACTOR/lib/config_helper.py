@@ -19,6 +19,7 @@ def set_log_file(target_folder: str, log_file_name: str):
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)
     root.addHandler(file_handler)
+
     return root
 
 
@@ -44,6 +45,7 @@ def set_data(option,date,offset):
                         bigquery.SchemaField('impressions', 'STRING', 'NULLABLE', None, ())]
 
         table_name = f'ywt_zara_all_summary_{flatten_date}'
+
         return action,gsc_schemas,table_name
 
 
@@ -58,6 +60,7 @@ def set_data(option,date,offset):
                      bigquery.SchemaField('device', 'STRING', 'NULLABLE', None, ())]
 
         table_name = f"ywt_zara_byDevice_m_detail_{flatten_date}"
+
         return action,gsc_schemas,table_name
 
     if option == "byDevice_DESK":
@@ -71,6 +74,7 @@ def set_data(option,date,offset):
                      bigquery.SchemaField('device', 'STRING', 'NULLABLE', None, ())]
 
         table_name = f"ywt_zara_byDevice_www_detail_{flatten_date}"
+
         return action,gsc_schemas,table_name
 
     if option == "byQueries":
@@ -85,6 +89,7 @@ def set_data(option,date,offset):
                       bigquery.SchemaField('queryText', 'STRING', 'NULLABLE', None, ())]
 
         table_name = f"ywt_zara_all_byQueries_detail_{flatten_date}"
+
         return action,gsc_schemas,table_name
 
 
