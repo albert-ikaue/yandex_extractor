@@ -234,8 +234,8 @@ def main():
     bq_tmp_file= '../lib/df.csv'
 
     bq_project='zara-seo'
-    bq_dataset='seo_rao_yandex'
-    bq_dataset_location='EU'
+    bq_dataset='seo_raw_yandex'
+    bq_dataset_location='US'
 
     # build the BigQuery service object
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] =json_key_file
@@ -286,12 +286,11 @@ def main():
 
 
             print(u">> date --> %s  rows to process  --> %s " % (date,len(dfObj) if "dfObj" in locals() else 0))
-            sys.exit(0)
 
             dfObj.to_csv(bq_tmp_file,header=False, index=False)
 
             # Upload csv to BQ
-            upload_bq(bq_project, bq_dataset, table_name,schema,bq_tmp_file,cl,bq_dataset_location,bq_check,bq_alert_empty,
+            upload_bq(bq_project, bq_dataset, table_name,gsc_schemas,bq_tmp_file,cl,bq_dataset_location,bq_check,bq_alert_empty,
                     bq_alert_callback,script_file)
 
 
