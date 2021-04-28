@@ -23,6 +23,14 @@ def set_log_file(target_folder: str, log_file_name: str):
 
 
 def set_data(option,date,offset):
+    """
+    This function decides what extraction is going to be performed and return the adecuate params to it.
+    Acts like a dict.
+    :param option: What type of extraction is going to be performed.
+    :param date: Date to perform the extraction.
+    :param offset: need for paging on byQueries option.
+    :return: URL to perform the HTTP GET request, schemas to upload to BQ, table name.
+    """
     flatten_date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y%m%d")
 
     if option == "summary":
@@ -81,6 +89,14 @@ def set_data(option,date,offset):
 
 
 def obtain_data(json_data, option, date):
+    """
+    This function retrieve the data from json obtained by the HTTP GET request.
+    :param json_data: data obtained from the GET request
+    :param option: what type of extraction has been performed
+    :param date: date
+    :return: DataFrame object with all data extracted
+    """
+
     # Create empty df
     dfObj = pd.DataFrame()
 

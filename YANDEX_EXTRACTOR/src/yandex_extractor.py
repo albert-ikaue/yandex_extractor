@@ -134,7 +134,7 @@ def GET_request(action):
 def upload_bq(bq_project, bq_dataset, table_name,gsc_schemas,bq_tmp_file,cl,bq_dataset_location,bq_check,bq_alert_empty,
              bq_alert_callback,script_file):
     """
-    This function uploads the CSV resultant to a BQ table.
+    This function uploads the CSV resultant from tmp file to a BQ table.
     :param bq_project: BQ project
     :param bq_dataset: BQ dataset
     :param table_name: Table name
@@ -219,8 +219,11 @@ def main():
     # Uncomment to set and see all logs
     #set_logs("../lib/logs")
 
+    # Setting main variables
+
     bq_check=False
     bq_alert_empty=False
+    # Alert callback, not relevant
     bq_alert_callback = lambda x, y: requests.post("https://hook.integromat.com/kahmpduow7ftbnqbv1eeermaim9r8kos",
                                                    data={
                                                        "origin": "VM-GCE-Analytics.pem",
@@ -241,47 +244,46 @@ def main():
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] =json_key_file
     cl = bigquery.Client()
 
+    # Generate data frame
     gsc_date_range,script_file = date_range()
 
-
+    # Loop for extraction options
     for option in ["byDevice_MOB","byDevice_DESK","summary","byQueries"]:
+
         # traverse the date range
         for date in gsc_date_range:
 
+            # set offset to byQueries extraction type (due to paging)
             offset = 0
 
+            # Retrieve URL to HTTP GET (action), BQ Schemas and Table Name
             action, gsc_schemas, table_name = set_data(option,date,offset)
+
             # Obtain desired data
             json_data = GET_request(action)
-            # Fill DF
+
+            # Process JSON and return a pandas DataFrame Object with all the data.
             dfObj = obtain_data(json_data, option, date)
 
-            #Obtain all rows and not only 500
-
+            # Only for byQueries option. Obtain all rows, and not only 500 (paging).
             if option == "byQueries":
                 total_offset = json_data['count']
                 while total_offset > offset:
 
                     offset+=500
                     action, gsc_schemas, table_name = set_data(option, date, offset)
-                    # Obtain desired data
                     json_data2 = GET_request(action)
-                    #Not working nice.
                     dfObj2 = obtain_data(json_data2, option, date)
 
 
                     dfObj=dfObj.append(dfObj2, ignore_index=True)
 
-
-
-
-
-
-
             print(u">> Table --> %s | date --> %s | rows to process  --> %s " % (table_name,date,len(dfObj) if "dfObj" in locals() else 0))
+
+            # Generate tmp csv file
             dfObj.to_csv(bq_tmp_file,header=False, index=False)
 
-            # Upload csv to BQ
+            # Upload tmp csv to BQ
             upload_bq(bq_project, bq_dataset, table_name,gsc_schemas,bq_tmp_file,cl,bq_dataset_location,bq_check,bq_alert_empty,
                     bq_alert_callback,script_file)
 
