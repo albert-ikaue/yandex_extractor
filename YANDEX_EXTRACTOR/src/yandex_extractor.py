@@ -285,7 +285,7 @@ def main():
             dfObj = obtain_data(json_data, option, date)
 
 
-            print(u">> date --> %s  rows to process  --> %s " % (date,len(dfObj) if "dfObj" in locals() else 0))
+            print(u">>Table --> %s date --> %s  rows to process  --> %s " % (table_name,date,len(dfObj) if "dfObj" in locals() else 0))
 
             dfObj.to_csv(bq_tmp_file,header=False, index=False)
 

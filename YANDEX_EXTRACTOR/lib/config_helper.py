@@ -49,7 +49,7 @@ def set_data(option,date,offset):
                      bigquery.SchemaField('impressions', 'STRING', 'NULLABLE', None, ()),
                      bigquery.SchemaField('device', 'STRING', 'NULLABLE', None, ())]
 
-        table_name = f"ywt_zara_all_byDevice_detail_{flatten_date}"
+        table_name = f"ywt_zara_byDevice_m_detail_{flatten_date}"
         return action,gsc_schemas,table_name
 
     if option == "byDevice_DESK":
@@ -62,7 +62,7 @@ def set_data(option,date,offset):
                      bigquery.SchemaField('impressions', 'STRING', 'NULLABLE', None, ()),
                      bigquery.SchemaField('device', 'STRING', 'NULLABLE', None, ())]
 
-        table_name = f"ywt_zara_all_byDevice_detail_{flatten_date}"
+        table_name = f"ywt_zara_byDevice_www_detail_{flatten_date}"
         return action,gsc_schemas,table_name
 
     if option == "byQueries":
