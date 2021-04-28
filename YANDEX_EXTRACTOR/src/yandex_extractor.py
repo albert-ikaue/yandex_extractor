@@ -165,7 +165,7 @@ def upload_bq(bq_project, bq_dataset, table_name,gsc_schemas,bq_tmp_file,cl,bq_d
         try:
             # upload the rows
             rs = jb.result()
-            print("Table uploaded to BQ")
+            print("Table uploaded to BQ \n")
             # check if the table was created successfully
             if bq_check == True:
                 if not cl.get_table(final_table_name):
