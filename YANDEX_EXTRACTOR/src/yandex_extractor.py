@@ -244,7 +244,7 @@ def main():
     gsc_date_range,script_file = date_range()
 
 
-    for option in ["byQueries"]:#,"byDevice_MOB","byDevice_DESK","summary"]:
+    for option in ["byQueries","byDevice_MOB","byDevice_DESK","summary"]:
         # traverse the date range
         for date in gsc_date_range:
 
