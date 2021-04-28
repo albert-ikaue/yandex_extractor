@@ -279,7 +279,6 @@ def main():
 
 
             print(u">>Table --> %s date --> %s  rows to process  --> %s " % (table_name,date,len(dfObj) if "dfObj" in locals() else 0))
-            sys.exit(0)
             dfObj.to_csv(bq_tmp_file,header=False, index=False)
 
             # Upload csv to BQ
