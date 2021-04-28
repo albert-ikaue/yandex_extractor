@@ -36,8 +36,8 @@ impressions, clicks, pos mitja impr, pos mitja clicks, queryId, queryText
 
 """
 def date_range():
-    gsc_date_start = datetime.strftime(datetime.now() - timedelta(6), "%Y-%m-%d")
-    gsc_date_end = datetime.strftime(datetime.now() - timedelta(6), "%Y-%m-%d")
+    gsc_date_start = datetime.strftime(datetime.now() - timedelta(7), "%Y-%m-%d")
+    gsc_date_end = datetime.strftime(datetime.now() - timedelta(7), "%Y-%m-%d")
 
     # fetch the current script
     script_file = sys.argv[1] if len(sys.argv) > 1 else sys.argv[0]
@@ -244,25 +244,49 @@ def main():
     gsc_date_range,script_file = date_range()
 
 
-    for option in ["byQueries","byDevice_MOB","byDevice_DESK"]:
+    for option in ["byDevice_MOB","byDevice_DESK","summary"]: #,"byQueries"]:
         # traverse the date range
         for date in gsc_date_range:
 
-            action, gsc_schemas, table_name = set_data(option,date)
+            offset = 0
+
+            action, gsc_schemas, table_name = set_data(option,date,offset)
             # Obtain desired data
             json_data = GET_request(action)
-            print(json_data)
-            sys.exit(0)
+
+            #Obtain all rows and not only 500
+
+            if option == "byQueries":
+                total_offset = json_data['count']
+                while total_offset > offset:
+
+                    offset+=500
+                    action, gsc_schemas, table_name = set_data(option, date, offset)
+                    # Obtain desired data
+                    json_data2 = GET_request(action)
+                    #Not working nice.
+                    import json
+                    dictA = json.loads(json_data)
+                    dictB = json.loads(json_data2)
+
+                    merged_dict = {key: value for (key, value) in (dictA.items() + dictB.items())}
+
+                    # string dump of the merged dict
+                    json_data_final = json.dumps(merged_dict)
+                    print(json_data_final)
+                    sys.exit(0)
+                    json_data['queries'] += json_data2['queries']
 
 
 
-####################### AQUI MHE QUEADT
 
 
             # Fill DF
-            dfObj = obtain_data(json_data,option,date)
+            dfObj = obtain_data(json_data, option, date)
+
 
             print(u">> date --> %s  rows to process  --> %s " % (date,len(dfObj) if "dfObj" in locals() else 0))
+            sys.exit(0)
 
             dfObj.to_csv(bq_tmp_file,header=False, index=False)
 

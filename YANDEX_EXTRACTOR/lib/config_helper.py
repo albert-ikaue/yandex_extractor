@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 import logging
-import os
+import os,sys
 import pandas as pd
 from google.cloud import bigquery
 
@@ -22,7 +22,7 @@ def set_log_file(target_folder: str, log_file_name: str):
     return root
 
 
-def set_data(option,date):
+def set_data(option,date,offset):
     flatten_date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y%m%d")
 
     if option == "summary":
@@ -66,7 +66,7 @@ def set_data(option,date):
         return action,gsc_schemas,table_name
 
     if option == "byQueries":
-        action = f"/user/1125390301/hosts/https:www.zara.com:443/search-queries/popular?order_by=TOTAL_CLICKS&query_indicator=TOTAL_CLICKS&query_indicator=TOTAL_SHOWS&query_indicator=AVG_SHOW_POSITION&query_indicator=AVG_CLICK_POSITION&date_from={date}&date_to={date}"
+        action = f"/user/1125390301/hosts/https:www.zara.com:443/search-queries/popular?order_by=TOTAL_CLICKS&query_indicator=TOTAL_CLICKS&query_indicator=TOTAL_SHOWS&query_indicator=AVG_SHOW_POSITION&query_indicator=AVG_CLICK_POSITION&date_from={date}&date_to={date}&offset={offset}"
 
         gsc_schemas = [bigquery.SchemaField('avg_click_pos', 'STRING', 'NULLABLE', None, ()),
                       bigquery.SchemaField('avg_impressions_pos', 'STRING', 'NULLABLE', None, ()),
@@ -137,3 +137,26 @@ def obtain_data(json_data, option, date):
 
         return dfObj.append({'date': date, 'avg_click_pos': clcl_av, 'avg_impressions_pos': imp_av, 'clicks': clicks,
                              'impressions': impressions,'device': dev}, ignore_index=True)
+
+    else:
+
+
+        for query in json_data["queries"]:
+            impressions = query['indicators']['TOTAL_SHOWS']
+
+            clicks = query['indicators']['TOTAL_CLICKS']
+
+            imp_av = query['indicators']['AVG_SHOW_POSITION']
+
+            clcl_av = query['indicators']['AVG_CLICK_POSITION']
+
+            query_id = query['query_id']
+
+            query_text = query['query_text']
+
+            dict = {'date': date, 'avg_click_pos': clcl_av, 'avg_impressions_pos': imp_av, 'clicks': clicks,
+                    'impressions': impressions, 'query_id': query_id, 'query_text': query_text}
+            dfObj = dfObj.append(dict, ignore_index=True)
+
+
+        return dfObj
