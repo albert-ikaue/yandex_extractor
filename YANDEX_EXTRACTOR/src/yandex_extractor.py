@@ -244,7 +244,7 @@ def main():
     gsc_date_range,script_file = date_range()
 
 
-    for option in ["byDevice_MOB","byDevice_DESK","summary"]: #,"byQueries"]:
+    for option in ["byQueries"]:#,"byDevice_MOB","byDevice_DESK","summary"]:
         # traverse the date range
         for date in gsc_date_range:
 
@@ -253,6 +253,8 @@ def main():
             action, gsc_schemas, table_name = set_data(option,date,offset)
             # Obtain desired data
             json_data = GET_request(action)
+            # Fill DF
+            dfObj = obtain_data(json_data, option, date)
 
             #Obtain all rows and not only 500
 
@@ -265,28 +267,19 @@ def main():
                     # Obtain desired data
                     json_data2 = GET_request(action)
                     #Not working nice.
-                    import json
-                    dictA = json.loads(json_data)
-                    dictB = json.loads(json_data2)
+                    dfObj2 = obtain_data(json_data2, option, date)
 
-                    merged_dict = {key: value for (key, value) in (dictA.items() + dictB.items())}
 
-                    # string dump of the merged dict
-                    json_data_final = json.dumps(merged_dict)
-                    print(json_data_final)
-                    sys.exit(0)
-                    json_data['queries'] += json_data2['queries']
+                    dfObj=dfObj.append(dfObj2, ignore_index=True)
 
 
 
 
 
-            # Fill DF
-            dfObj = obtain_data(json_data, option, date)
 
 
             print(u">>Table --> %s date --> %s  rows to process  --> %s " % (table_name,date,len(dfObj) if "dfObj" in locals() else 0))
-
+            sys.exit(0)
             dfObj.to_csv(bq_tmp_file,header=False, index=False)
 
             # Upload csv to BQ

@@ -140,7 +140,6 @@ def obtain_data(json_data, option, date):
 
     else:
 
-
         for query in json_data["queries"]:
             impressions = query['indicators']['TOTAL_SHOWS']
 
