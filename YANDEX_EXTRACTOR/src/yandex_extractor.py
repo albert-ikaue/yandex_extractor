@@ -17,9 +17,12 @@ from datetime import datetime, timedelta
 from google.cloud import bigquery
 from dateutil.parser import parse
 
+myPath = os.path.dirname(os.path.abspath(__file__))
+
+sys.path.insert(0, myPath + '/../lib')
+from config_helper import set_log_file, set_data, obtain_data
 
 sys.path.insert(1,"../lib")
-from config_helper import set_log_file, set_data, obtain_data
 
 """
 TO-DO

@@ -1,10 +1,11 @@
 import pytest
 import sys
+import  os
 
-sys.path.insert(1, "../../YANDEX_EXTRACTOR/src")
+myPath = os.path.dirname(os.path.abspath(__file__))
+
+sys.path.insert(0, myPath + '/../../src')
 from yandex_extractor import date_range
-
-
 
 
 @pytest.mark.parametrize(
