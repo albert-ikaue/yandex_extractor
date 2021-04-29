@@ -1,30 +1,29 @@
 import pytest
 import sys
 import  os
+import dateutil
 
 myPath = os.path.dirname(os.path.abspath(__file__))
 
 sys.path.insert(0, myPath + '/../../src')
 from yandex_extractor import date_range
 
+
+time = date_range()
 @pytest.mark.parametrize(
     ["expected"],
     [
         # Input 1
         (
-            "",
+
+            time,
 
 
-        ),
-        # Input 2
-        (
-            "",
-
-        ),
+        )
     ],
 )
 
-def test_get_subject(input_subject1,input_subject2, expected):
+def test_get_subject(expected):
     """
     :param input_subject1: Keyword
     :param input_subject2: Number of max urls
@@ -32,8 +31,7 @@ def test_get_subject(input_subject1,input_subject2, expected):
     :return: assertion test accepted
     """
 
-    actual,actual1 = date_range(input_subject1,input_subject2)
+    actual = date_range()
 
-    assert type(actual) == list #modify as desired. Dummy example. It could be assert actual == expected
-    assert type(actual1) == str
+    assert actual == expected #modify as desired. Dummy example. It could be assert actual == expected
 
