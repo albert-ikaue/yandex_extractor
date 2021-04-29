@@ -56,8 +56,8 @@ def set_data(option,date,offset):
                      bigquery.SchemaField('avg_impressions_pos', 'STRING', 'NULLABLE', None, ()),
                      bigquery.SchemaField('clicks', 'STRING', 'NULLABLE', None, ()),
                      bigquery.SchemaField('date', 'STRING', 'NULLABLE', None, ()),
-                     bigquery.SchemaField('impressions', 'STRING', 'NULLABLE', None, ()),
-                     bigquery.SchemaField('device', 'STRING', 'NULLABLE', None, ())]
+                       bigquery.SchemaField('device', 'STRING', 'NULLABLE', None, ()),
+                       bigquery.SchemaField('impressions', 'STRING', 'NULLABLE', None, ())]
 
         table_name = f"ywt_zara_byDevice_m_detail_{flatten_date}"
 
@@ -70,8 +70,8 @@ def set_data(option,date,offset):
                      bigquery.SchemaField('avg_impressions_pos', 'STRING', 'NULLABLE', None, ()),
                      bigquery.SchemaField('clicks', 'STRING', 'NULLABLE', None, ()),
                      bigquery.SchemaField('date', 'STRING', 'NULLABLE', None, ()),
-                     bigquery.SchemaField('impressions', 'STRING', 'NULLABLE', None, ()),
-                     bigquery.SchemaField('device', 'STRING', 'NULLABLE', None, ())]
+                     bigquery.SchemaField('device', 'STRING', 'NULLABLE', None, ()),
+                     bigquery.SchemaField('impressions', 'STRING', 'NULLABLE', None, ())]
 
         table_name = f"ywt_zara_byDevice_www_detail_{flatten_date}"
 

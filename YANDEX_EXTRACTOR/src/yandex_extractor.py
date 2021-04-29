@@ -262,6 +262,7 @@ def main():
             # Obtain desired data
             json_data = GET_request(action)
 
+
             # Process JSON and return a pandas DataFrame Object with all the data.
             dfObj = obtain_data(json_data, option, date)
 
