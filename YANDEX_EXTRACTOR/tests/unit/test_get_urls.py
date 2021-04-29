@@ -23,6 +23,7 @@ time = date_range()
     ],
 )
 
+
 def test_get_subject(expected):
     """
     :param input_subject1: Keyword
