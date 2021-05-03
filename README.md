@@ -55,7 +55,7 @@ pip install .[testing]
 ## Running
 ```
 $ cd /YANDEX_EXTRACTOR/bin
-$ python3 NLP_extractor.py word_list.txt
+$ python3 yandex_extractor.py YYYY-MM-DD
 ```
 ## Running Tests
 ```

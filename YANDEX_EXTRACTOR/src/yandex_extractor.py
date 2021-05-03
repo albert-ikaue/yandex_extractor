@@ -17,14 +17,30 @@ from datetime import datetime, timedelta
 from google.cloud import bigquery
 from dateutil.parser import parse
 
+myPath = os.path.dirname(os.path.abspath(__file__))
 
-sys.path.insert(1, "../lib/")
-from config_helper import set_log_file
+sys.path.insert(0, myPath + '/../lib')
+from config_helper import set_log_file, set_data, obtain_data
+
+sys.path.insert(1,"../lib")
+
+"""
+TO-DO
+
+ywt_zara_all_summary_20210417
+impressions, clicks, pos mitja impr, pos mitja clicks
+
+ywt_zara_all_byDevice_detail_20210417
+impressions, clicks, pos mitja impr, pos mitja clicks, device (mobileTablet, desktop)
+
+ywt_zara_all_byQueries_detail_20210417
+impressions, clicks, pos mitja impr, pos mitja clicks, queryId, queryText
 
 
+"""
 def date_range():
-    gsc_date_start = datetime.strftime(datetime.now() - timedelta(5), "%Y-%m-%d")
-    gsc_date_end = datetime.strftime(datetime.now() - timedelta(5), "%Y-%m-%d")
+    gsc_date_start = datetime.strftime(datetime.now() - timedelta(2), "%Y-%m-%d")
+    gsc_date_end = datetime.strftime(datetime.now() - timedelta(2), "%Y-%m-%d")
 
     # fetch the current script
     script_file = sys.argv[1] if len(sys.argv) > 1 else sys.argv[0]
@@ -52,14 +68,14 @@ def date_range():
 
     return gsc_date_range,script_file
 
-def GET_request(date):
+def GET_request(action):
     """
     This function returns a json with the clicks and impressions from yandex.webmaster API v4 from Zara site.
     :return: string with data selected and obtained
     """
 
     # OAuth token of the user that requests will be made on behalf of
-    token = 'AQAAAABT99pbAAcUcF1YciaFek7iiwOOsNQCYzQ'
+
 
     # Login of the advertising agency client
     # Required parameter if requests are made on behalf of an advertising agency
@@ -84,8 +100,10 @@ def GET_request(date):
         # "skipReportSummary": "true"
     }
 
+
     API_URL = 'https://api.webmaster.yandex.net/v4'
-    action = f"/user/1125390301/hosts/https:www.zara.com:443/search-queries/all/history?query_indicator=TOTAL_SHOWS&query_indicator=TOTAL_CLICKS&query_indicator=AVG_SHOW_POSITION&query_indicator=AVG_CLICK_POSITION&date_from={date}&date_to={date}"
+
+
 
     retry_count = 0
     retry_max = 1
@@ -108,26 +126,18 @@ def GET_request(date):
             logging.error(f"Could not retrieve response: {message}")
             raise Exception(str(message))
 
-    json_data = resp.json()
+    return resp.json()
 
-    for shows in json_data['indicators']['TOTAL_SHOWS']:
-        impressions = shows['value']
 
-    for clicks in json_data['indicators']['TOTAL_CLICKS']:
-        clicks = clicks['value']
 
-    for av_im in json_data['indicators']['AVG_SHOW_POSITION']:
-        imp_av = av_im['value']
 
-    for av_cl in json_data['indicators']['AVG_CLICK_POSITION']:
-        clcl_av = av_cl['value']
 
-    return impressions, clicks, imp_av, clcl_av
+
 
 def upload_bq(bq_project, bq_dataset, table_name,gsc_schemas,bq_tmp_file,cl,bq_dataset_location,bq_check,bq_alert_empty,
              bq_alert_callback,script_file):
     """
-    This function uploads the CSV resultant to a BQ table.
+    This function uploads the CSV resultant from tmp file to a BQ table.
     :param bq_project: BQ project
     :param bq_dataset: BQ dataset
     :param table_name: Table name
@@ -158,7 +168,7 @@ def upload_bq(bq_project, bq_dataset, table_name,gsc_schemas,bq_tmp_file,cl,bq_d
         try:
             # upload the rows
             rs = jb.result()
-            print("Table uploaded to BQ")
+            print("Table uploaded to BQ \n")
             # check if the table was created successfully
             if bq_check == True:
                 if not cl.get_table(final_table_name):
@@ -212,8 +222,11 @@ def main():
     # Uncomment to set and see all logs
     #set_logs("../lib/logs")
 
+    # Setting main variables
+
     bq_check=False
     bq_alert_empty=False
+    # Alert callback, not relevant
     bq_alert_callback = lambda x, y: requests.post("https://hook.integromat.com/kahmpduow7ftbnqbv1eeermaim9r8kos",
                                                    data={
                                                        "origin": "VM-GCE-Analytics.pem",
@@ -222,53 +235,61 @@ def main():
                                                        "error": y
                                                    })
 
-    gsc_schemas = [
-        bigquery.SchemaField('avg_click_pos', 'STRING', 'NULLABLE', None, ()),
-        bigquery.SchemaField('avg_impressions_pos', 'STRING', 'NULLABLE', None, ()),
-        bigquery.SchemaField('clicks', 'STRING', 'NULLABLE', None, ()),
-        bigquery.SchemaField('date', 'STRING', 'NULLABLE', None, ()),
-        bigquery.SchemaField('impressions', 'STRING', 'NULLABLE', None, ()),
-        ]
 
-
-    json_key_file = "ikaue-bb8.json"
+    json_key_file = "zara.json"
     bq_tmp_file= '../lib/df.csv'
 
-    bq_project='ikaue-bb8'
-    bq_dataset='testing'
-    bq_dataset_location='EU'
+    bq_project='zara-seo'
+    bq_dataset='seo_raw_yandex'
+    bq_dataset_location='US'
 
     # build the BigQuery service object
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] =json_key_file
     cl = bigquery.Client()
 
+    # Generate data frame
     gsc_date_range,script_file = date_range()
 
+    # Loop for extraction options
+    for option in ["summary","byQueries"]:
+
+        # traverse the date range
+        for date in gsc_date_range:
+
+            # set offset to byQueries extraction type (due to paging)
+            offset = 0
+
+            # Retrieve URL to HTTP GET (action), BQ Schemas and Table Name
+            action, gsc_schemas, table_name = set_data(option,date,offset)
+
+            # Obtain desired data
+            json_data = GET_request(action)
 
 
-    # traverse the date range
-    for date in gsc_date_range:
+            # Process JSON and return a pandas DataFrame Object with all the data.
+            dfObj = obtain_data(json_data, option, date)
 
-        # Create empty df
-        dfObj = pd.DataFrame()
+            # Only for byQueries option. Obtain all rows, and not only 500 (paging).
+            if option == "byQueries":
+                total_offset = json_data['count']
+                while total_offset > offset:
 
-        flatten_date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y%m%d")
-        #Create table name
-        table_name = f'zara_yandex_{flatten_date}'
+                    offset+=500
+                    action, gsc_schemas, table_name = set_data(option, date, offset)
+                    json_data2 = GET_request(action)
+                    dfObj2 = obtain_data(json_data2, option, date)
 
-        # Obtain desired data
-        impressions, clicks, imp_av, clcl_av = GET_request(date)
 
-        # Fill DF
-        dfObj = dfObj.append({'date': date, 'avg_click_pos':clcl_av,'avg_impressions_pos':imp_av,'clicks': clicks, 'impressions': impressions }, ignore_index=True)
+                    dfObj=dfObj.append(dfObj2, ignore_index=True)
 
-        print(u">> date --> %s  rows to process  --> %s " % (date,len(dfObj) if "dfObj" in locals() else 0))
+            print(u">> Table --> %s | date --> %s | rows to process  --> %s " % (table_name,date,len(dfObj) if "dfObj" in locals() else 0))
 
-        dfObj.to_csv(bq_tmp_file,header=False, index=False)
+            # Generate tmp csv file
+            dfObj.to_csv(bq_tmp_file,header=False, index=False)
 
-        # Upload csv to BQ
-        upload_bq(bq_project, bq_dataset, table_name,gsc_schemas,bq_tmp_file,cl,bq_dataset_location,bq_check,bq_alert_empty,
-                 bq_alert_callback,script_file)
+            # Upload tmp csv to BQ
+            upload_bq(bq_project, bq_dataset, table_name,gsc_schemas,bq_tmp_file,cl,bq_dataset_location,bq_check,bq_alert_empty,
+                    bq_alert_callback,script_file)
 
 
 
