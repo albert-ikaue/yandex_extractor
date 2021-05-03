@@ -39,8 +39,8 @@ impressions, clicks, pos mitja impr, pos mitja clicks, queryId, queryText
 
 """
 def date_range():
-    gsc_date_start = datetime.strftime(datetime.now() - timedelta(7), "%Y-%m-%d")
-    gsc_date_end = datetime.strftime(datetime.now() - timedelta(7), "%Y-%m-%d")
+    gsc_date_start = datetime.strftime(datetime.now() - timedelta(4), "%Y-%m-%d")
+    gsc_date_end = datetime.strftime(datetime.now() - timedelta(2), "%Y-%m-%d")
 
     # fetch the current script
     script_file = sys.argv[1] if len(sys.argv) > 1 else sys.argv[0]
@@ -251,7 +251,7 @@ def main():
     gsc_date_range,script_file = date_range()
 
     # Loop for extraction options
-    for option in ["byDevice_MOB","byDevice_DESK","summary","byQueries"]:
+    for option in ["summary","byQueries"]:
 
         # traverse the date range
         for date in gsc_date_range:
