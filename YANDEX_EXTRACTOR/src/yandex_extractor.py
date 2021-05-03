@@ -39,7 +39,7 @@ impressions, clicks, pos mitja impr, pos mitja clicks, queryId, queryText
 
 """
 def date_range():
-    gsc_date_start = datetime.strftime(datetime.now() - timedelta(4), "%Y-%m-%d")
+    gsc_date_start = datetime.strftime(datetime.now() - timedelta(2), "%Y-%m-%d")
     gsc_date_end = datetime.strftime(datetime.now() - timedelta(2), "%Y-%m-%d")
 
     # fetch the current script
